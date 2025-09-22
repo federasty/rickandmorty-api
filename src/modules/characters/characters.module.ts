@@ -1,10 +1,12 @@
+// src/modules/characters/characters.module.ts
 import { Module } from '@nestjs/common';
-import { CharactersController } from './characters.controller';
+import { HttpModule } from '@nestjs/axios';
 import { CharactersService } from './characters.service';
-
+import { CharactersController } from './characters.controller';
 
 @Module({
+  imports: [HttpModule],
+  providers: [CharactersService],
   controllers: [CharactersController],
-  providers: [CharactersService]
 })
 export class CharactersModule {}
