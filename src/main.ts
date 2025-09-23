@@ -2,17 +2,24 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
-import { Server } from 'http';
 
-let server: Server;
+const expressApp = express();
 
-export default async function handler(req: any, res: any) {
-  if (!server) {
-    const expressApp = express();
-    const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
-    await app.init();
-    server = expressApp.listen(); // sin puerto fijo
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
+  await app.init();
+
+  // 🚨 Si estás en local, levantar servidor normalmente
+  if (process.env.VERCEL === undefined) {
+    await app.listen(3000);
+    console.log(`🚀 Local server running on http://localhost:3000`);
   }
-
-  (server as any).emit('request', req, res);
 }
+
+// Ejecutar bootstrap sólo en local
+if (process.env.VERCEL === undefined) {
+  bootstrap();
+}
+
+// 🚨 Exportar handler para Vercel
+export const handler = expressApp;
