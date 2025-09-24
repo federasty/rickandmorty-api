@@ -26,6 +26,9 @@ let CharactersController = class CharactersController {
     async getCharacterById(id) {
         return await this.charactersService.getCharacterById(Number(id));
     }
+    async health() {
+        return await this.charactersService.healthCheck();
+    }
 };
 exports.CharactersController = CharactersController;
 __decorate([
@@ -43,6 +46,12 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", Promise)
 ], CharactersController.prototype, "getCharacterById", null);
+__decorate([
+    (0, common_1.Get)('/health'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], CharactersController.prototype, "health", null);
 exports.CharactersController = CharactersController = __decorate([
     (0, common_1.Controller)('characters'),
     __metadata("design:paramtypes", [characters_service_1.CharactersService])

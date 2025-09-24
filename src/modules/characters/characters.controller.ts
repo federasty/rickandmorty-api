@@ -20,4 +20,10 @@ export class CharactersController {
   async getCharacterById(@Param('id') id: string) {
     return await this.charactersService.getCharacterById(Number(id));
   }
+
+  // --- NUEVO: GET /characters/health ---
+  @Get('/health')
+  async health() {
+    return await this.charactersService.healthCheck();
+  }
 }

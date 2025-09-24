@@ -25,6 +25,26 @@ let CharactersService = class CharactersService {
             image: character.image,
         };
     }
+    async fetchWithRetry(url, retries = 3, timeout = 2000) {
+        let lastError;
+        for (let i = 0; i < retries; i++) {
+            try {
+                const source = axios_1.default.CancelToken.source();
+                const timer = setTimeout(() => source.cancel(), timeout);
+                const response = await axios_1.default.get(url, { cancelToken: source.token });
+                clearTimeout(timer);
+                return response.data;
+            }
+            catch (error) {
+                lastError = error;
+                const cached = this.cache.get(url);
+                if (cached && cached.expiry > Date.now()) {
+                    return { ...cached.data, stale: true };
+                }
+            }
+        }
+        throw lastError;
+    }
     async getAllCharacters(filters) {
         const params = new URLSearchParams();
         if (filters?.status)
@@ -32,12 +52,12 @@ let CharactersService = class CharactersService {
         if (filters?.name)
             params.append('name', filters.name);
         const cacheKey = params.toString() || 'all';
+        const url = `${this.baseUrl}?${params.toString()}`;
         const cached = this.cache.get(cacheKey);
-        if (cached && cached.expiry > Date.now()) {
+        if (cached && cached.expiry > Date.now())
             return cached.data;
-        }
-        const response = await axios_1.default.get(`${this.baseUrl}?${params.toString()}`);
-        const characters = response.data.results.map((c) => this.normalizeCharacter(c));
+        const data = await this.fetchWithRetry(url);
+        const characters = data.results?.map((c) => this.normalizeCharacter(c)) || [];
         this.cache.set(cacheKey, {
             data: characters,
             expiry: Date.now() + 30 * 1000,
@@ -46,17 +66,26 @@ let CharactersService = class CharactersService {
     }
     async getCharacterById(id) {
         const cacheKey = `id-${id}`;
+        const url = `${this.baseUrl}/${id}`;
         const cached = this.cache.get(cacheKey);
-        if (cached && cached.expiry > Date.now()) {
+        if (cached && cached.expiry > Date.now())
             return cached.data;
-        }
-        const response = await axios_1.default.get(`${this.baseUrl}/${id}`);
-        const character = this.normalizeCharacter(response.data);
+        const data = await this.fetchWithRetry(url);
+        const character = this.normalizeCharacter(data);
         this.cache.set(cacheKey, {
             data: character,
             expiry: Date.now() + 30 * 1000,
         });
         return character;
+    }
+    async healthCheck() {
+        try {
+            await this.fetchWithRetry(this.baseUrl, 1, 1000);
+            return { status: 'ok' };
+        }
+        catch {
+            return { status: 'error' };
+        }
     }
 };
 exports.CharactersService = CharactersService;
