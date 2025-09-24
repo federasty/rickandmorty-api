@@ -100,9 +100,10 @@ export class CharactersService {
   // --- NUEVO: Health check endpoint ---
   async healthCheck() {
     try {
-      await this.fetchWithRetry(this.baseUrl, 1, 1000); // 1 intento, timeout 1s
+      await this.fetchWithRetry(this.baseUrl, 1, 1000);
       return { status: 'ok' };
-    } catch {
+    } catch (error) {
+      console.error('Health check failed:', error.message || error);
       return { status: 'error' };
     }
   }

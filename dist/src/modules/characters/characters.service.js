@@ -83,7 +83,8 @@ let CharactersService = class CharactersService {
             await this.fetchWithRetry(this.baseUrl, 1, 1000);
             return { status: 'ok' };
         }
-        catch {
+        catch (error) {
+            console.error('Health check failed:', error.message || error);
             return { status: 'error' };
         }
     }
