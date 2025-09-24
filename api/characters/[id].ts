@@ -1,6 +1,6 @@
-// api/characters.ts
+// api/characters/[id].ts
 import { NestFactory } from '@nestjs/core';
-import { AppModule } from '../src/app.module';
+import { AppModule } from '../..//src/app.module';
 import { INestApplication } from '@nestjs/common';
 
 let app: INestApplication;
@@ -18,26 +18,17 @@ const initApp = async (): Promise<INestApplication> => {
 
 export default async function handler(req: any, res: any) {
   try {
-    console.log('Characters function is running!', req.method, req.url);
+    console.log('Character ID function is running!', req.method, req.url);
     
     const nestApp = await initApp();
     const httpAdapter = nestApp.getHttpAdapter();
     const instance = httpAdapter.getInstance();
     
-    // Obtener la URL original
-    const originalUrl = req.url;
+    // Obtener el ID de los query parameters de Vercel
+    const { id } = req.query;
     
-    // Si la URL tiene formato /api/characters/123, extraer el ID
-    const match = originalUrl.match(/\/api\/characters\/(\d+)/);
-    
-    if (match) {
-      // Es una request para un ID específico
-      const id = match[1];
-      req.url = `/characters/${id}`;
-    } else {
-      // Es una request para la lista completa
-      req.url = '/characters';
-    }
+    // Modificar la URL para que funcione con NestJS
+    req.url = `/characters/${id}`;
     
     return instance(req, res);
   } catch (error) {
