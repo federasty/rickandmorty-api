@@ -20,8 +20,8 @@ let CharactersController = class CharactersController {
     constructor(charactersService) {
         this.charactersService = charactersService;
     }
-    async getAllCharacters() {
-        return await this.charactersService.getAllCharacters();
+    async getAllCharacters(status, name) {
+        return await this.charactersService.getAllCharacters({ status, name });
     }
     async getCharacterById(id) {
         return await this.charactersService.getCharacterById(Number(id));
@@ -30,8 +30,10 @@ let CharactersController = class CharactersController {
 exports.CharactersController = CharactersController;
 __decorate([
     (0, common_1.Get)(),
+    __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('name')),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", []),
+    __metadata("design:paramtypes", [String, String]),
     __metadata("design:returntype", Promise)
 ], CharactersController.prototype, "getAllCharacters", null);
 __decorate([

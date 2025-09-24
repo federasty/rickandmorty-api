@@ -1,45 +1,71 @@
 // src/modules/characters/characters.service.ts
 import { Injectable } from '@nestjs/common';
-import { HttpService } from '@nestjs/axios';
-import { firstValueFrom } from 'rxjs';
+import axios from 'axios';
+
+interface CacheEntry {
+  data: any;
+  expiry: number;
+}
 
 @Injectable()
 export class CharactersService {
-  constructor(private readonly httpService: HttpService) {}
+  private readonly baseUrl = 'https://rickandmortyapi.com/api/character';
+  private cache = new Map<string, CacheEntry>();
 
-  private API_URL = 'https://rickandmortyapi.com/api/character';
-
-  // Trae lista de personajes
-  async getAllCharacters() {
-    const response = await firstValueFrom(
-      this.httpService.get(this.API_URL),
-    );
-
-    // Normalizar la data
-    return response.data.results.map((char: any) => ({
-      id: char.id,
-      name: char.name,
-      status: char.status,
-      species: char.species,
-      origin: char.origin?.name,
-      image: char.image,
-    }));
+  private normalizeCharacter(character: any) {
+    return {
+      id: character.id,
+      name: character.name,
+      status: character.status,
+      species: character.species,
+      origin: character.origin?.name,
+      image: character.image,
+    };
   }
 
-  // Trae detalle de un personaje por ID
-  async getCharacterById(id: number) {
-    const response = await firstValueFrom(
-      this.httpService.get(`${this.API_URL}/${id}`),
+  async getAllCharacters(filters?: { status?: string; name?: string }) {
+    const params = new URLSearchParams();
+
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.name) params.append('name', filters.name);
+
+    const cacheKey = params.toString() || 'all';
+
+    // Revisar cache
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expiry > Date.now()) {
+      return cached.data;
+    }
+
+    const response = await axios.get(`${this.baseUrl}?${params.toString()}`);
+    const characters = response.data.results.map((c: any) =>
+      this.normalizeCharacter(c),
     );
 
-    const char = response.data;
-    return {
-      id: char.id,
-      name: char.name,
-      status: char.status,
-      species: char.species,
-      origin: char.origin?.name,
-      image: char.image,
-    };
+    // Guardar en cache (30s)
+    this.cache.set(cacheKey, {
+      data: characters,
+      expiry: Date.now() + 30 * 1000,
+    });
+
+    return characters;
+  }
+
+  async getCharacterById(id: number) {
+    const cacheKey = `id-${id}`;
+    const cached = this.cache.get(cacheKey);
+    if (cached && cached.expiry > Date.now()) {
+      return cached.data;
+    }
+
+    const response = await axios.get(`${this.baseUrl}/${id}`);
+    const character = this.normalizeCharacter(response.data);
+
+    this.cache.set(cacheKey, {
+      data: character,
+      expiry: Date.now() + 30 * 1000,
+    });
+
+    return character;
   }
 }
